@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-func NewMonitor() *Monitor {
+func NewMonitor(static string) *Monitor {
 	m := &Monitor{}
-	m.Init()
+	m.Init(static)
 	return m
 }
 
@@ -16,10 +16,23 @@ type Monitor struct {
 	Mux       *http.ServeMux
 }
 
-func (m *Monitor) Init() {
+func (m *Monitor) Init(static string) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-
+	mux.Handle("/", http.FileServer(http.Dir(static)))
+	mux.HandleFunc("/nodes", func(res http.ResponseWriter, req *http.Request) {
+		req.ParseForm()
+		pid := req.Form.Get("pid")
+		operation := req.Form.Get("operation")
+		fmt.Println(pid)
+		if pid == "" {
+			
+			return
+		}
+		switch operation {
+		case "start":
+		case "interrupt":
+		case "terminate":
+		}
 	})
 	m.Mux = mux
 }

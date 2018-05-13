@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="app">
+<head>
+    <meta charset="UTF-8">
+    <title>TEAM H1 - System Monitor</title>
+    <script src="angular.js"></script>
+    <script src="controller.js"></script>
+</head>
+<body ng-controller="MonitorController as monitor">
+<section>
+    <button type="button" ng-click="monitor.refresh()">Refresh</button>
+</section>
+<section class="nodes">
+    <div class="node" ng-repeat="node in monitor.nodes">
+        <span ng-switch="node.type">
+            <span ng-switch-case="'master'" class="master">Master</span>
+            <span ng-switch-case="'gateway'" class="gateway">Gateway</span>
+            <span ng-switch-case="'server'" class="server">Server</span>
+            <span ng-switch-case="'client'" class="client">Client</span>
+        </span>
+        <span>{{node.id}}</span>
+        <a ng-click="monitor.terminate(node.id)">terminate</a>
+        <a ng-click="monitor.kill(node.id)">kill</a>
+    </div>
+</section>
+</body>
+</html>

@@ -1,7 +1,5 @@
 package main
 
-import "net/http"
-
 var pm PathManager
 
 func init() {
@@ -9,7 +7,7 @@ func init() {
 }
 
 func NewASMonitor() *ASMonitor {
-	m := &ASMonitor{NewMonitor()}
+	m := &ASMonitor{NewMonitor("app")}
 	m.Init()
 	return m
 }
@@ -19,7 +17,4 @@ type ASMonitor struct {
 }
 
 func (m *ASMonitor) Init() {
-	m.Mux.HandleFunc("/as", func(res http.ResponseWriter, req *http.Request) {
-
-	})
 }
