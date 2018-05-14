@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"strconv"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -16,11 +17,14 @@ func NewMonitor(static string) *Monitor {
 }
 
 type Monitor struct {
-	Processes []*Process
+	Processes map[string]*Process
 	Mux       *http.ServeMux
+	connm     map[string]*websocket.Conn
 }
 
 func (m *Monitor) Init(static string) {
+	m.Processes = make(map[string]*Process)
+	m.connm = make(map[string]*websocket.Conn)
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir(static)))
 	mux.HandleFunc("/nodes", m.server)
@@ -32,25 +36,94 @@ func (m *Monitor) Listen(port int) {
 }
 
 func (m *Monitor) server(w http.ResponseWriter, r *http.Request) {
-	log.Println("will upgrade!")
 	c, err := upgrader.Upgrade(w, r, nil)
+	m.connm[r.Host] = c
 	if err != nil {
-		log.Print("upgrade:", err)
+		log.Println("upgrade:", err)
 		return
 	}
-	log.Println("upgraded!")
-	defer c.Close()
+	defer func() {
+		delete(m.connm, r.Host)
+		c.Close()
+	}()
 	for {
-		mt, message, err := c.ReadMessage()
+		var msg Message
+		err := c.ReadJSON(&msg)
 		if err != nil {
-			log.Println("read:", err)
+			log.Println("Rcv:", err)
 			break
 		}
-		log.Printf("recv: %d %s", mt, message)
-		err = c.WriteMessage(mt, message)
+		err = c.WriteJSON(m.handle(msg))
 		if err != nil {
-			log.Println("write:", err)
+			log.Println("Snd:", err)
 			break
 		}
 	}
+	//
+	//for {
+	//	mt, req, err := c.ReadMessage()
+	//	if err != nil {
+	//		log.Println("Rcv:", err)
+	//		break
+	//	}
+	//	var msg Message
+	//	json.Unmarshal(req, &msg)
+	//	if err != nil {
+	//		log.Println("Rcv:", err)
+	//		break
+	//	}
+	//	res, err := json.Marshal(m.handle(msg))
+	//	if err != nil {
+	//		log.Println("Snd:", err)
+	//		break
+	//	}
+	//	err = c.WriteMessage(mt, res)
+	//	if err != nil {
+	//		log.Println("Snd:", err)
+	//		break
+	//	}
+	//}
+}
+
+func (m *Monitor) Broadcast(msg Message) {
+	for _, conn := range m.connm {
+		conn.WriteJSON(msg)
+	}
+}
+
+type Message struct {
+	Command string   `json:"command"`
+	Params  []string `json:"params"`
+}
+
+func (m *Monitor) handle(msg Message) (res Message) {
+	res.Command = "success"
+	switch msg.Command {
+	case "start":
+		cmd := msg.Params[0]
+		p := NewProcess(cmd)
+		go func() {
+			for p.Scanner.Scan() {
+				line := p.Scanner.Text()
+				m.Broadcast(Message{
+					Command: "stdout",
+					Params:  []string{strconv.Itoa(p.Pid), line},
+				})
+			}
+		}()
+		m.Processes[strconv.Itoa(p.Pid)] = p
+	case "interrupt":
+		p, ok := m.Processes[msg.Params[0]]
+		if ok {
+			p.Interrupt()
+		}
+	case "kill":
+		p, ok := m.Processes[msg.Params[0]]
+		if ok {
+			p.Kill()
+		}
+	case "remove":
+		delete(m.Processes, msg.Params[0])
+	}
+	return res
 }

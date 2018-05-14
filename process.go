@@ -3,7 +3,6 @@ package main
 import (
 	"os/exec"
 	"bufio"
-	"fmt"
 	"os"
 	"log"
 )
@@ -16,6 +15,7 @@ type Process struct {
 	command string
 	cmd     *exec.Cmd
 	Pid     int
+	Scanner *bufio.Scanner
 }
 
 func (p *Process) Run() error {
@@ -27,14 +27,10 @@ func (p *Process) Run() error {
 		return err
 	}
 	p.Pid = cmd.Process.Pid
-	go func() {
-		scanner := bufio.NewScanner(out)
-		scanner.Split(bufio.ScanLines)
-		for scanner.Scan() {
-			m := scanner.Text()
-			fmt.Println(m)
-		}
-	}()
+	scanner := bufio.NewScanner(out)
+	scanner.Split(bufio.ScanLines)
+	p.Scanner = scanner
+	cmd.Wait()
 	return nil
 }
 
