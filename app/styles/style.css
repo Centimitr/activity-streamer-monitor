@@ -1,0 +1,77 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+label {
+    font-size: 12px;
+    color: #444444;
+}
+
+input {
+    margin-left: 8px;
+    border: none;
+    border-bottom: 1px solid #999999;
+    outline: none;
+    line-height: 20px;
+    background: none;
+    font-size: 13px;
+    padding: 0 4px;
+    color: #444444;
+}
+
+input:focus {
+    border-color: rgb(58, 131, 238);
+}
+
+a {
+    font-size: 13px;
+    text-decoration: underline;
+    color: rgb(58, 131, 238);
+    cursor: pointer;
+}
+
+.body {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.body .main {
+    height: 100%;
+    flex: 0;
+}
+
+.body .sidebar {
+    flex: 0;
+    height: 100%;
+    width: 325px;
+    min-width: 325px;
+    background-color: #f9f9f9;
+    border-right: 1px solid #cccccc;
+}
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.block-wrapper {
+    padding: 12px;
+}
+
+.block {
+    border: 1px solid #cccccc;
+    margin: 8px;
+}

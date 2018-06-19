@@ -46,20 +46,21 @@ func (m *Monitor) server(w http.ResponseWriter, r *http.Request) {
 		delete(m.connm, r.Host)
 		c.Close()
 	}()
+	log.Println("Connected:", r.Host)
 	for {
 		var msg Message
 		err := c.ReadJSON(&msg)
 		if err != nil {
-			log.Println("Rcv:", err)
+			log.Println("Rcve:", err)
 			break
 		}
 		err = c.WriteJSON(m.handle(msg))
 		if err != nil {
-			log.Println("Snd:", err)
+			log.Println("Snde:", err)
 			break
 		}
 	}
-	//
+
 	//for {
 	//	mt, req, err := c.ReadMessage()
 	//	if err != nil {
@@ -86,6 +87,7 @@ func (m *Monitor) server(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Monitor) Broadcast(msg Message) {
+	log.Println("Broadcast:", msg)
 	for _, conn := range m.connm {
 		conn.WriteJSON(msg)
 	}
@@ -102,7 +104,8 @@ func (m *Monitor) handle(msg Message) (res Message) {
 	case "start":
 		cmd := msg.Params[0]
 		p := NewProcess(cmd)
-		go func() {
+		p.Run()
+		go func(p *Process) {
 			for p.Scanner.Scan() {
 				line := p.Scanner.Text()
 				m.Broadcast(Message{
@@ -110,7 +113,7 @@ func (m *Monitor) handle(msg Message) (res Message) {
 					Params:  []string{strconv.Itoa(p.Pid), line},
 				})
 			}
-		}()
+		}(p)
 		m.Processes[strconv.Itoa(p.Pid)] = p
 	case "interrupt":
 		p, ok := m.Processes[msg.Params[0]]

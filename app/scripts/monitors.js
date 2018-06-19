@@ -10,9 +10,7 @@ class CMMonitor {
     connect() {
         const socket = new WebSocket(this.url);
 
-        socket.addEventListener('open', function (event) {
-            socket.send('Hello Server!');
-        });
+        socket.addEventListener('open', event => this.send('test'));
 
         socket.addEventListener('message', function (event) {
             console.log('Message from server ', event.data);
@@ -22,9 +20,10 @@ class CMMonitor {
     }
 
     send(cmd, params) {
+        console.log(cmd, params)
         this.socket.send(JSON.stringify({
             command: cmd,
-            params: Array.from(params)
+            params: params ? Array.from(params) : []
         }))
     }
 
@@ -46,11 +45,18 @@ class CMMonitors {
         this.map = new Map()
     }
 
+    get list() {
+        return Array.from(this.map.values())
+    }
+
     addLocal() {
         this.add(`${window.location.host}`)
     }
 
     add(host) {
+        if (!host) {
+            return
+        }
         const m = new CMMonitor(`ws://${host}/nodes`)
         m.connect()
         this.map.set(m.mid, m)
